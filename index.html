@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PhishGuard+ | AI Scam & Phishing Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #020a0f;
+    --bg2: #061218;
+    --panel: #0a1e26;
+    --border: #0e3a4a;
+    --accent: #00e5ff;
+    --accent2: #ff3c5a;
+    --accent3: #39ff14;
+    --warn: #ffb700;
+    --text: #c8e8f0;
+    --muted: #4a7a8a;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-head: 'Exo 2', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scanline effect */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 40px 0 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .logo-icon {
+    width: 52px; height: 52px;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 0 20px rgba(0,229,255,0.4), inset 0 0 10px rgba(0,229,255,0.1);
+    animation: pulse-border 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 20px rgba(0,229,255,0.4), inset 0 0 10px rgba(0,229,255,0.1); }
+    50% { box-shadow: 0 0 35px rgba(0,229,255,0.7), inset 0 0 20px rgba(0,229,255,0.2); }
+  }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0,229,255,0.5);
+  }
+
+  h1 span { color: var(--accent); }
+
+  .tagline {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .threat-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    background: rgba(0,229,255,0.03);
+  }
+
+  /* ── MAIN PANEL ── */
+  .main-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 30px 0;
+    box-shadow: 0 0 60px rgba(0,229,255,0.05);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(0,229,255,0.05);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.red { background: var(--accent2); }
+  .dot.yellow { background: var(--warn); }
+  .dot.green { background: var(--accent3); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+    user-select: none;
+  }
+
+  .tab:hover { color: var(--text); background: rgba(0,229,255,0.03); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(0,229,255,0.05); }
+
+  /* ── INPUT AREAS ── */
+  .input-section { padding: 24px; display: none; }
+  .input-section.active { display: block; }
+
+  .input-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,229,255,0.15); }
+  textarea::placeholder { color: var(--muted); }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 50px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,0,0,0.2);
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.04);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  .upload-text {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .upload-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  #preview-img {
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-top: 16px;
+    display: none;
+  }
+
+  /* Analyze button */
+  .analyze-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(0,229,255,0.05));
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: var(--font-head);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .analyze-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,229,255,0.1), transparent);
+    transition: left 0.4s;
+  }
+
+  .analyze-btn:hover::before { left: 100%; }
+  .analyze-btn:hover { background: rgba(0,229,255,0.15); box-shadow: 0 0 25px rgba(0,229,255,0.25); }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── LOADING ── */
+  #loading { display: none; padding: 30px 24px; text-align: center; }
+
+  .loading-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+
+  .loading-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 2px;
+    animation: loading-anim 1.8s ease-in-out infinite;
+  }
+
+  @keyframes loading-anim {
+    0% { width: 0%; margin-left: 0%; }
+    50% { width: 70%; margin-left: 15%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  .loading-text {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
+
+  /* ── RESULTS ── */
+  #results { display: none; padding: 24px; }
+
+  /* Threat meter */
+  .threat-meter-wrap {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .threat-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .threat-score-display {
+    font-family: var(--font-head);
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .threat-level-text {
+    font-family: var(--font-head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .meter-bar-wrap {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .meter-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .verdict-box {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.5;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.2);
+    border-left: 3px solid;
+    text-align: left;
+  }
+
+  /* Red flags */
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .red-flags-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .red-flag-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    animation: slide-in 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  @keyframes slide-in {
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  .flag-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+  .flag-content { flex: 1; }
+
+  .flag-type {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .flag-desc {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Advice section */
+  .advice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .advice-card {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    animation: slide-in 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  .advice-num {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent3);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .advice-text {
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Threat type tags */
+  .threat-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .threat-tag {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .tag-phishing { background: rgba(255,60,90,0.15); border: 1px solid rgba(255,60,90,0.4); color: var(--accent2); }
+  .tag-romance { background: rgba(255,100,150,0.1); border: 1px solid rgba(255,100,150,0.3); color: #ff6699; }
+  .tag-financial { background: rgba(255,183,0,0.1); border: 1px solid rgba(255,183,0,0.3); color: var(--warn); }
+  .tag-impersonation { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); color: var(--accent); }
+  .tag-safe { background: rgba(57,255,20,0.1); border: 1px solid rgba(57,255,20,0.3); color: var(--accent3); }
+
+  /* Analyze again */
+  .reset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Colors by risk level */
+  .risk-critical { color: var(--accent2); }
+  .risk-high { color: #ff7040; }
+  .risk-medium { color: var(--warn); }
+  .risk-low { color: var(--accent3); }
+
+  .bar-critical { background: linear-gradient(90deg, var(--accent2), #ff7040); }
+  .bar-high { background: linear-gradient(90deg, #ff7040, var(--warn)); }
+  .bar-medium { background: linear-gradient(90deg, var(--warn), #ffe066); }
+  .bar-low { background: linear-gradient(90deg, var(--accent3), #80ff60); }
+
+  .verdict-critical { border-color: var(--accent2); }
+  .verdict-high { border-color: #ff7040; }
+  .verdict-medium { border-color: var(--warn); }
+  .verdict-low { border-color: var(--accent3); }
+
+  /* Link input */
+  .link-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .link-input-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,229,255,0.15);
+  }
+  .link-prefix { font-size: 1.1rem; flex-shrink: 0; }
+  #link-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+  #link-input::placeholder { color: var(--muted); }
+
+  .link-checks-preview {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .check-icon {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .check-icon.pending { color: var(--muted); }
+  .check-icon.pass { color: var(--accent3); }
+  .check-icon.fail { color: var(--accent2); }
+  .check-icon.warn { color: var(--warn); }
+
+  /* URL breakdown card */
+  .url-breakdown {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .url-parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 10px;
+    align-items: center;
+  }
+  .url-part {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+  }
+  .url-part.protocol { background: rgba(57,255,20,0.1); border: 1px solid rgba(57,255,20,0.3); color: var(--accent3); }
+  .url-part.domain { background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); color: var(--accent); }
+  .url-part.domain.suspicious { background: rgba(255,60,90,0.1); border: 1px solid rgba(255,60,90,0.4); color: var(--accent2); }
+  .url-part.path { background: rgba(255,183,0,0.08); border: 1px solid rgba(255,183,0,0.2); color: var(--warn); }
+  .url-part.params { background: rgba(255,100,50,0.1); border: 1px solid rgba(255,100,50,0.3); color: #ff7040; }
+  .url-part.sep { color: var(--muted); }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 20px 0 40px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+
+  /* Red Alert Button */
+  .red-alert-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 24px auto 0;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #1a0000, #2d0000);
+    border: 1px solid #ff1a1a;
+    border-radius: 6px;
+    color: #ff1a1a;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(255,26,26,0.2);
+    animation: red-btn-pulse 2s ease-in-out infinite;
+    width: fit-content;
+  }
+  @keyframes red-btn-pulse {
+    0%,100% { box-shadow: 0 0 20px rgba(255,26,26,0.2); }
+    50% { box-shadow: 0 0 35px rgba(255,26,26,0.45); }
+  }
+  .red-alert-btn:hover {
+    background: linear-gradient(135deg, #2d0000, #4a0000);
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(255,26,26,0.5);
+  }
+  .red-alert-btn .ra-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff1a1a;
+    box-shadow: 0 0 8px #ff1a1a;
+    animation: red-btn-pulse 1s infinite;
+  }
+
+  footer span { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .tabs { font-size: 0.8rem; }
+    .threat-score-display { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-area">
+      <div class="logo-icon">🛡️</div>
+      <h1>PHISH<span>GUARD</span>+</h1>
+    </div>
+    <p class="tagline">// AI-Powered Scam & Phishing Intelligence System</p>
+    <div class="threat-badges">
+      <span class="badge">PHISHING URLs</span>
+      <span class="badge">LINK VERIFICATION</span>
+      <span class="badge">ROMANCE SCAMS</span>
+      <span class="badge">FINANCIAL FRAUD</span>
+      <span class="badge">IMPERSONATION</span>
+      <span class="badge">SOCIAL ENGINEERING</span>
+    </div>
+    <a href="red-alert.html" class="red-alert-btn">
+      <span class="ra-dot"></span>
+      🚨 &nbsp; RED ALERT — EMERGENCY BROADCAST
+      <span class="ra-dot"></span>
+    </a>
+  </header>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+
+    <div class="panel-header">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      &nbsp; THREAT ANALYSIS TERMINAL v2.0
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('text')">📝 &nbsp;MESSAGE</div>
+      <div class="tab" onclick="switchTab('link')">🔗 &nbsp;LINK CHECK</div>
+      <div class="tab" onclick="switchTab('image')">🖼️ &nbsp;SCREENSHOT</div>
+    </div>
+
+    <!-- TEXT INPUT -->
+    <div class="input-section active" id="tab-text">
+      <p class="input-label">// PASTE SUSPICIOUS MESSAGE BELOW</p>
+      <textarea id="message-input" placeholder="Paste the suspicious message here...&#10;&#10;Example: 'Congratulations! You have won $5,000. Click here to claim: http://bit.ly/win-now. Reply with your bank details immediately or the offer expires in 24 hours.'"></textarea>
+      <button class="analyze-btn" onclick="analyzeText()">
+        <span>⚡</span> ANALYZE THREAT
+      </button>
+    </div>
+
+    <!-- LINK INPUT -->
+    <div class="input-section" id="tab-link">
+      <p class="input-label">// PASTE SUSPICIOUS LINK / URL BELOW</p>
+      <div class="link-input-wrap">
+        <span class="link-prefix">🔗</span>
+        <input type="text" id="link-input" placeholder="https://example-suspicious-link.com/claim?id=123..." autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="link-checks-preview" id="link-checks-preview">
+        <div class="check-row"><span class="check-icon pending" id="chk-protocol">○</span><span class="check-label">Protocol validation (HTTP/HTTPS)</span></div>
+        <div class="check-row"><span class="check-icon pending" id="chk-domain">○</span><span class="check-label">Domain & TLD analysis</span></div>
+        <div class="check-row"><span class="check-icon pending" id="chk-lookalike">○</span><span class="check-label">Lookalike / typosquatting detection</span></div>
+        <div class="check-row"><span class="check-icon pending" id="chk-shortener">○</span><span class="check-label">URL shortener / redirect check</span></div>
+        <div class="check-row"><span class="check-icon pending" id="chk-params">○</span><span class="check-label">Suspicious parameters & patterns</span></div>
+        <div class="check-row"><span class="check-icon pending" id="chk-brand">○</span><span class="check-label">Brand impersonation scan</span></div>
+      </div>
+      <button class="analyze-btn" onclick="analyzeLink()">
+        <span>🔍</span> SCAN LINK
+      </button>
+    </div>
+
+    <!-- IMAGE INPUT -->
+    <div class="input-section" id="tab-image">
+      <p class="input-label">// UPLOAD SCREENSHOT OF SUSPICIOUS MESSAGE</p>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="img-upload" accept="image/*" onchange="handleImageUpload(event)" />
+        <div class="upload-icon">📸</div>
+        <div class="upload-text">Drop screenshot here or click to upload</div>
+        <div class="upload-sub">SUPPORTS: PNG · JPG · WEBP · GIF</div>
+      </div>
+      <img id="preview-img" alt="Preview" />
+      <button class="analyze-btn" id="img-analyze-btn" onclick="analyzeImage()" style="display:none">
+        <span>⚡</span> ANALYZE SCREENSHOT
+      </button>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading">
+      <div class="loading-text" id="loading-text">INITIALIZING THREAT SCANNER...</div>
+      <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results"></div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    PHISHGUARD+ &nbsp;|&nbsp; POWERED BY <span>CYBER NATIONS BAUCHI</span> &nbsp;|&nbsp; NATIONAL PRIVACY WEEK 2026
+  </footer>
+
+</div>
+
+<script>
+  let currentImageBase64 = null;
+  let currentImageType = null;
+
+  // Tab switching
+  function switchTab(tab) {
+    const tabOrder = ['text', 'link', 'image'];
+    const idx = tabOrder.indexOf(tab) + 1;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.input-section').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.tab:nth-child(${idx})`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  // Image upload handler
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      currentImageBase64 = dataUrl.split(',')[1];
+      currentImageType = file.type;
+      const preview = document.getElementById('preview-img');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      document.getElementById('img-analyze-btn').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag and drop
+  const uploadZone = document.getElementById('upload-zone');
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); uploadZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const input = document.getElementById('img-upload');
+      const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+      handleImageUpload({ target: { files: [file] } });
+    }
+  });
+
+  // Loading messages cycle
+  const loadingMessages = [
+    'INITIALIZING THREAT SCANNER...',
+    'PARSING MESSAGE PATTERNS...',
+    'CHECKING SOCIAL ENGINEERING TACTICS...',
+    'ANALYZING URGENCY INDICATORS...',
+    'SCANNING FOR PHISHING SIGNATURES...',
+    'CROSS-REFERENCING SCAM DATABASE...',
+    'GENERATING THREAT REPORT...'
+  ];
+  let loadingInterval;
+
+  function startLoading() {
+    let i = 0;
+    const el = document.getElementById('loading-text');
+    el.textContent = loadingMessages[0];
+    loadingInterval = setInterval(() => {
+      i = (i + 1) % loadingMessages.length;
+      el.textContent = loadingMessages[i];
+    }, 900);
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+  }
+
+  function stopLoading() {
+    clearInterval(loadingInterval);
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  // Analyze text message
+  async function analyzeText() {
+    const msg = document.getElementById('message-input').value.trim();
+    if (!msg) { alert('Please paste a message to analyze.'); return; }
+    startLoading();
+    const result = await callClaudeAPI({ type: 'text', content: msg });
+    stopLoading();
+    renderResults(result);
+  }
+
+  // Analyze image screenshot
+  async function analyzeImage() {
+    if (!currentImageBase64) { alert('Please upload an image first.'); return; }
+    startLoading();
+    const result = await callClaudeAPI({ type: 'image', base64: currentImageBase64, mediaType: currentImageType });
+    stopLoading();
+    renderResults(result);
+  }
+
+  // Animate check icons during scan
+  async function animateChecks() {
+    const checks = ['chk-protocol','chk-domain','chk-lookalike','chk-shortener','chk-params','chk-brand'];
+    for (const id of checks) {
+      await new Promise(r => setTimeout(r, 320));
+      const el = document.getElementById(id);
+      if (el) { el.textContent = '◉'; el.classList.remove('pending'); el.classList.add('warn'); }
+    }
+  }
+
+  // Parse URL into visual parts
+  function buildURLBreakdown(url) {
+    try {
+      const u = new URL(url.startsWith('http') ? url : 'https://' + url);
+      const protocol = u.protocol.replace(':','');
+      const domain = u.hostname;
+      const path = u.pathname !== '/' ? u.pathname : '';
+      const params = u.search;
+      const isHttp = protocol === 'http';
+      const hasParams = params.length > 0;
+      return `
+        <div class="url-breakdown">
+          <div class="threat-label" style="margin-bottom:0">// URL ANATOMY</div>
+          <div class="url-parts">
+            <span class="url-part protocol">${protocol}://</span>
+            <span class="url-part domain ${isHttp ? 'suspicious' : ''}">${domain}</span>
+            ${path ? `<span class="url-part sep">/</span><span class="url-part path">${path}</span>` : ''}
+            ${hasParams ? `<span class="url-part params">${params}</span>` : ''}
+          </div>
+        </div>`;
+    } catch { return ''; }
+  }
+
+  // Analyze link
+  async function analyzeLink() {
+    const url = document.getElementById('link-input').value.trim();
+    if (!url) { alert('Please paste a URL to scan.'); return; }
+    startLoading();
+    animateChecks();
+    const result = await callClaudeAPI({ type: 'link', content: url });
+    stopLoading();
+    renderResults(result, url);
+  }
+
+  // Call Anthropic API
+  async function callClaudeAPI({ type, content, base64, mediaType }) {
+    const systemPrompt = `You are PhishGuard+, an expert cybersecurity AI that analyzes messages, URLs, and screenshots for scams, phishing, and social engineering attacks.
+
+Analyze the provided input and return ONLY a valid JSON object (no markdown, no backticks, no preamble) with this exact structure:
+{
+  "threatScore": <number 0-100>,
+  "riskLevel": <"CRITICAL" | "HIGH" | "MEDIUM" | "LOW">,
+  "verdict": <string: 2-3 sentence plain-language verdict explaining what this is and whether it's dangerous>,
+  "threatTypes": <array of strings from: "PHISHING_URL", "ROMANCE_SCAM", "FINANCIAL_FRAUD", "IMPERSONATION", "SUSPICIOUS_LINK", "SAFE">,
+  "redFlags": [
+    {
+      "type": <short category e.g. "URGENCY TACTIC", "SUSPICIOUS DOMAIN", "URL SHORTENER", "TYPOSQUATTING", "HTTP NOT HTTPS", "LOOKALIKE DOMAIN", "SUSPICIOUS PARAMETERS", "BRAND IMPERSONATION", "EMOTIONAL MANIPULATION", "REQUEST FOR PERSONAL DATA">,
+      "icon": <single emoji>,
+      "description": <clear explanation of this specific red flag>
+    }
+  ],
+  "advice": [<string: specific actionable step>]
+}
+
+For URL analysis specifically, check: protocol (http vs https), domain spelling vs known brands (paypa1, g00gle, arnazon), URL shorteners (bit.ly, tinyurl, t.co), suspicious TLDs, excessive subdomains, numeric IPs, deceptive path names, suspicious query parameters (token, verify, confirm, claim, account).
+
+Rules:
+- threatScore: 0-20=LOW, 21-50=MEDIUM, 51-75=HIGH, 76-100=CRITICAL
+- redFlags: 0 if safe, 2-6 if suspicious
+- advice: 3-5 concrete steps
+- Be specific to the actual content provided`;
+
+    let messages;
+    if (type === 'text') {
+      messages = [{ role: 'user', content: `Analyze this message for scams and phishing:\n\n"${content}"` }];
+    } else if (type === 'link') {
+      messages = [{ role: 'user', content: `Analyze this URL for phishing, scams, or suspicious indicators. Perform a thorough check on domain, protocol, structure, and patterns:\n\n${content}` }];
+    } else {
+      messages = [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: 'Analyze this screenshot of a message for scams, phishing, or social engineering threats.' }
+        ]
+      }];
+    }
+
+    // ── BACKEND API CALL — no API key needed in frontend ──
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, content, base64, mediaType })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.error('API error:', response.status, errData);
+        return {
+          threatScore: 0, riskLevel: 'LOW',
+          verdict: `Analysis error: ${errData?.error || 'Server error. Please try again.'}`,
+          threatTypes: [], redFlags: [],
+          advice: ['Please try again in a moment', 'Check your internet connection', 'Contact support if the issue persists']
+        };
+      }
+
+      const data = await response.json();
+      return data.result;
+
+    } catch (err) {
+      console.error(err);
+      return {
+        threatScore: 0, riskLevel: 'LOW',
+        verdict: 'Could not reach the analysis server. Please check your internet connection and try again.',
+        threatTypes: [], redFlags: [],
+        advice: ['Check your internet connection', 'Refresh the page and try again', 'Contact support if the issue persists']
+      };
+    }
+  }
+
+  // Render results
+  function renderResults(data, url) {
+    const { threatScore, riskLevel, verdict, threatTypes, redFlags, advice } = data;
+    const riskClass = riskLevel.toLowerCase();
+    const barWidth = Math.min(100, Math.max(2, threatScore));
+
+    // Tag map
+    const tagMap = {
+      'PHISHING_URL': ['tag-phishing', 'PHISHING URL'],
+      'ROMANCE_SCAM': ['tag-romance', 'ROMANCE SCAM'],
+      'FINANCIAL_FRAUD': ['tag-financial', 'FINANCIAL FRAUD'],
+      'IMPERSONATION': ['tag-impersonation', 'IMPERSONATION'],
+      'SAFE': ['tag-safe', '✓ SAFE']
+    };
+
+    const tagsHTML = (threatTypes || []).map(t => {
+      const [cls, label] = tagMap[t] || ['tag-safe', t];
+      return `<span class="threat-tag ${cls}">${label}</span>`;
+    }).join('');
+
+    const flagsHTML = (redFlags || []).map((flag, i) => `
+      <div class="red-flag-item" style="animation-delay: ${i * 0.08}s">
+        <div class="flag-icon">${flag.icon || '⚠️'}</div>
+        <div class="flag-content">
+          <div class="flag-type risk-${riskClass}">${flag.type}</div>
+          <div class="flag-desc">${flag.description}</div>
+        </div>
+      </div>
+    `).join('');
+
+    const adviceHTML = (advice || []).map((a, i) => `
+      <div class="advice-card" style="animation-delay: ${i * 0.08}s">
+        <div class="advice-num">// STEP ${String(i+1).padStart(2,'0')}</div>
+        <div class="advice-text">${a}</div>
+      </div>
+    `).join('');
+
+    const urlBreakdown = url ? buildURLBreakdown(url) : '';
+
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = `
+      <div class="threat-meter-wrap">
+        <div class="threat-label">// THREAT INTELLIGENCE REPORT</div>
+        ${tagsHTML ? `<div class="threat-tags" style="justify-content:center;margin-bottom:12px">${tagsHTML}</div>` : ''}
+        <div class="threat-score-display risk-${riskClass}">${threatScore}<span style="font-size:1.5rem">/100</span></div>
+        <div class="threat-level-text risk-${riskClass}">${riskLevel} RISK</div>
+        <div class="meter-bar-wrap">
+          <div class="meter-bar bar-${riskClass}" style="width: ${barWidth}%"></div>
+        </div>
+        <div class="verdict-box verdict-${riskClass}">${verdict}</div>
+      </div>
+
+      ${urlBreakdown}
+
+      ${redFlags && redFlags.length > 0 ? `
+        <div class="section-title">⚠ RED FLAGS DETECTED (${redFlags.length})</div>
+        <div class="red-flags-list">${flagsHTML}</div>
+      ` : `
+        <div class="section-title">✓ NO RED FLAGS</div>
+        <div style="font-family:var(--font-body);color:var(--accent3);padding:12px;border:1px solid rgba(57,255,20,0.2);border-radius:6px;background:rgba(57,255,20,0.05);">
+          No significant threat indicators detected in this message.
+        </div>
+      `}
+
+      <div class="section-title">🛡 RECOMMENDED ACTIONS</div>
+      <div class="advice-grid">${adviceHTML}</div>
+
+      <button class="reset-btn" onclick="resetAnalysis()">↩ &nbsp; ANALYZE ANOTHER MESSAGE</button>
+    `;
+
+    resultsEl.style.display = 'block';
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetAnalysis() {
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('message-input').value = '';
+    document.getElementById('preview-img').style.display = 'none';
+    document.getElementById('img-analyze-btn').style.display = 'none';
+    currentImageBase64 = null;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
