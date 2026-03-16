@@ -1,0 +1,2052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RED ALERT | PhishGuard+</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Exo+2:wght@300;400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & ROOT ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #050505;
+  --bg2:       #0d0d0d;
+  --panel:     #111111;
+  --panel2:    #181818;
+  --red:       #ff1a1a;
+  --red-dim:   #cc0000;
+  --red-glow:  rgba(255,26,26,0.35);
+  --red-faint: rgba(255,26,26,0.08);
+  --cyan:      #00e5ff;
+  --green:     #39ff14;
+  --amber:     #ffb700;
+  --white:     #ffffff;
+  --text:      #e0e0e0;
+  --muted:     #555;
+  --border:    #222;
+  --mono:      'Share Tech Mono', monospace;
+  --head:      'Bebas Neue', cursive;
+  --body:      'Rajdhani', sans-serif;
+  --exo:       'Exo 2', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* Animated noise grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
+
+/* ── SCREENS ────────────────────────────────────────────── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── GLOBAL NAV BAR ─────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,5,5,0.95);
+  backdrop-filter: blur(12px);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--head); font-size: 1.5rem; letter-spacing: 2px;
+}
+.topbar-logo .pg { color: var(--cyan); }
+.topbar-logo .plus { color: var(--white); }
+.topbar-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--red); letter-spacing: 2px;
+  border: 1px solid var(--red);
+  padding: 4px 10px; border-radius: 2px;
+  animation: badge-pulse 1.5s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 8px var(--red-glow); }
+  50% { opacity:0.6; box-shadow: none; }
+}
+.dot-live { width:7px; height:7px; border-radius:50%; background:var(--red); animation: badge-pulse 1s infinite; }
+
+/* ── BACK BUTTON ─────────────────────────────────────────── */
+.back-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--muted); font-family: var(--mono);
+  font-size: 0.7rem; letter-spacing: 2px;
+  padding: 6px 14px; cursor: pointer; border-radius: 2px;
+  transition: all 0.2s;
+}
+.back-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 1 — ENTRY (Red Alert Button on main page)
+═══════════════════════════════════════════════════════════ */
+#screen-entry {
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  text-align: center; padding: 40px 20px;
+  position: relative; overflow: hidden;
+}
+
+/* Pulsing ring background */
+.entry-rings {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; z-index: 0;
+}
+.ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(255,26,26,0.15);
+  animation: ring-expand 3s ease-out infinite;
+}
+.ring:nth-child(1) { width:300px; height:300px; animation-delay:0s; }
+.ring:nth-child(2) { width:500px; height:500px; animation-delay:0.8s; }
+.ring:nth-child(3) { width:700px; height:700px; animation-delay:1.6s; }
+.ring:nth-child(4) { width:900px; height:900px; animation-delay:2.4s; }
+@keyframes ring-expand {
+  0% { opacity:0.5; transform:scale(0.8); }
+  100% { opacity:0; transform:scale(1.2); }
+}
+
+.entry-content { position: relative; z-index: 1; max-width: 640px; }
+
+.entry-eyebrow {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--muted); letter-spacing: 4px;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.entry-title {
+  font-family: var(--head);
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  color: var(--white); line-height: 0.95;
+  margin-bottom: 8px;
+}
+.entry-title .red { color: var(--red); text-shadow: 0 0 40px var(--red-glow); }
+.entry-subtitle {
+  font-family: var(--exo); font-size: 1rem; font-weight: 300;
+  color: #888; margin-bottom: 40px; line-height: 1.6;
+}
+.entry-subtitle strong { color: var(--text); font-weight: 600; }
+
+/* THE BIG RED ALERT BUTTON */
+.red-alert-trigger {
+  position: relative; display: inline-flex;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px;
+  width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3a0000, #1a0000 60%, #0d0000);
+  border: 3px solid var(--red);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow:
+    0 0 0 8px rgba(255,26,26,0.08),
+    0 0 0 18px rgba(255,26,26,0.04),
+    0 0 60px rgba(255,26,26,0.3),
+    inset 0 0 40px rgba(255,26,26,0.1);
+  animation: btn-breathe 2.5s ease-in-out infinite;
+  margin-bottom: 24px;
+}
+@keyframes btn-breathe {
+  0%,100% { box-shadow: 0 0 0 8px rgba(255,26,26,0.08), 0 0 0 18px rgba(255,26,26,0.04), 0 0 60px rgba(255,26,26,0.3), inset 0 0 40px rgba(255,26,26,0.1); }
+  50% { box-shadow: 0 0 0 14px rgba(255,26,26,0.12), 0 0 0 28px rgba(255,26,26,0.06), 0 0 90px rgba(255,26,26,0.5), inset 0 0 60px rgba(255,26,26,0.18); }
+}
+.red-alert-trigger:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 0 14px rgba(255,26,26,0.15), 0 0 100px rgba(255,26,26,0.6), inset 0 0 60px rgba(255,26,26,0.2);
+}
+.red-alert-trigger:active { transform: scale(0.97); }
+.rat-icon { font-size: 3.2rem; line-height: 1; }
+.rat-label {
+  font-family: var(--head); font-size: 1.6rem;
+  color: var(--red); letter-spacing: 3px;
+  text-shadow: 0 0 20px var(--red-glow);
+}
+.rat-sub {
+  font-family: var(--mono); font-size: 0.55rem;
+  color: rgba(255,80,80,0.7); letter-spacing: 2px;
+}
+
+.entry-disclaimer {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 1px; line-height: 1.7;
+  max-width: 400px; margin: 0 auto;
+}
+.entry-disclaimer span { color: var(--amber); }
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 2 — PIN AUTH
+═══════════════════════════════════════════════════════════ */
+#screen-pin {
+  align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center;
+  background: radial-gradient(ellipse at center, #130000 0%, #050505 70%);
+}
+
+.pin-box {
+  background: var(--panel);
+  border: 1px solid #2a0000;
+  border-radius: 12px;
+  padding: 40px 36px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 0 60px rgba(255,26,26,0.12);
+}
+
+.pin-icon { font-size: 3rem; margin-bottom: 12px; }
+.pin-title {
+  font-family: var(--head); font-size: 2.2rem;
+  color: var(--white); letter-spacing: 3px; margin-bottom: 6px;
+}
+.pin-subtitle {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 28px;
+}
+
+/* Tab switch */
+.pin-tabs {
+  display: flex; border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; margin-bottom: 24px;
+}
+.pin-tab {
+  flex: 1; padding: 10px;
+  font-family: var(--body); font-size: 0.9rem; font-weight: 600;
+  background: transparent; border: none;
+  color: var(--muted); cursor: pointer; transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.pin-tab.active { background: var(--red-faint); color: var(--red); }
+
+/* PIN dots */
+.pin-dots {
+  display: flex; gap: 16px;
+  justify-content: center; margin-bottom: 24px;
+}
+.pin-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid #333;
+  background: transparent;
+  transition: all 0.2s;
+}
+.pin-dot.filled {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 10px var(--red-glow);
+}
+
+/* Numpad */
+.numpad {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 20px;
+}
+.num-btn {
+  padding: 14px 0;
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--white);
+  font-family: var(--exo); font-size: 1.3rem; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.num-btn:hover { background: #222; border-color: var(--red); color: var(--red); }
+.num-btn:active { transform: scale(0.94); }
+.num-btn.del { font-size: 1rem; color: var(--muted); }
+.num-btn.del:hover { color: var(--red); }
+
+.pin-enter-btn {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #cc0000, #ff1a1a);
+  border: none; border-radius: 8px;
+  color: var(--white); font-family: var(--head);
+  font-size: 1.2rem; letter-spacing: 4px;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(255,26,26,0.3);
+}
+.pin-enter-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,26,26,0.4); }
+.pin-enter-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+.pin-error {
+  font-family: var(--mono); font-size: 0.75rem;
+  color: var(--red); letter-spacing: 1px;
+  margin-top: 14px; min-height: 36px;
+  padding: 8px 12px; border-radius: 6px;
+  background: rgba(255,26,26,0.1);
+  border: 1px solid rgba(255,26,26,0.3);
+  text-align: center; line-height: 1.5;
+  display: none;
+}
+.pin-error.visible {
+  display: block;
+  animation: shake 0.4s ease, error-fade-in 0.2s ease;
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)}
+}
+@keyframes error-fade-in {
+  from { opacity:0; transform: translateY(-4px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.pin-dot.error {
+  background: var(--red) !important;
+  border-color: var(--red) !important;
+  box-shadow: 0 0 12px rgba(255,26,26,0.7) !important;
+  animation: dot-error 0.4s ease !important;
+}
+@keyframes dot-error {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.3); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 3 — DASHBOARD
+═══════════════════════════════════════════════════════════ */
+#screen-dashboard {
+  background: var(--bg);
+  flex-direction: column;
+}
+
+.dashboard-body {
+  flex: 1; padding: 28px;
+  max-width: 900px; width: 100%; margin: 0 auto;
+}
+
+/* Alert status banner */
+.alert-status-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 20px; margin-bottom: 24px;
+}
+.status-indicator {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 0.75rem; letter-spacing: 2px;
+}
+.status-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: badge-pulse 1.5s infinite;
+}
+.status-dot.red { background: var(--red); box-shadow: 0 0 8px var(--red-glow); }
+.contact-count {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--muted);
+  letter-spacing: 1px;
+}
+.contact-count span { color: var(--cyan); font-weight: bold; }
+
+/* Section label */
+.section-label {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--cyan); letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Social connect cards */
+.social-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px; margin-bottom: 28px;
+}
+.social-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 18px;
+  transition: all 0.2s; cursor: pointer;
+  position: relative; overflow: hidden;
+}
+.social-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.social-card.whatsapp::before { background: #25d366; }
+.social-card.facebook::before { background: #1877f2; }
+.social-card.instagram::before { background: linear-gradient(#f09433,#e6683c,#dc2743,#cc2366,#bc1888); }
+
+.social-card:hover { border-color: #333; transform: translateY(-2px); }
+.social-card.connected { border-color: rgba(57,255,20,0.3); }
+
+.sc-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.sc-logo { font-size: 1.8rem; }
+.sc-name {
+  font-family: var(--exo); font-size: 1rem; font-weight: 700; color: var(--white);
+}
+.sc-handle {
+  font-family: var(--mono); font-size: 0.65rem; color: var(--muted);
+}
+.sc-status {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 2px; margin-bottom: 10px;
+}
+.sc-status.connected { color: var(--green); }
+.sc-status.disconnected { color: var(--muted); }
+.sc-contacts {
+  font-family: var(--body); font-size: 0.88rem; color: var(--muted);
+  margin-bottom: 12px;
+}
+.sc-contacts span { color: var(--white); font-weight: 600; }
+.sc-btn {
+  width: 100%; padding: 9px;
+  border-radius: 6px; border: none;
+  font-family: var(--body); font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+}
+.sc-btn.connect {
+  background: rgba(255,255,255,0.06); color: var(--white);
+  border: 1px solid #333;
+}
+.sc-btn.connect:hover { background: rgba(255,255,255,0.12); }
+.sc-btn.disconnect {
+  background: rgba(57,255,20,0.08); color: var(--green);
+  border: 1px solid rgba(57,255,20,0.3);
+}
+.sc-btn.disconnect:hover { background: rgba(57,255,20,0.15); }
+
+/* Alert message preview */
+.message-preview-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px;
+  margin-bottom: 28px;
+}
+.preview-label {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 10px;
+}
+.preview-bubble {
+  background: rgba(255,26,26,0.06);
+  border: 1px solid rgba(255,26,26,0.2);
+  border-radius: 12px 12px 12px 0;
+  padding: 14px 16px;
+  font-family: var(--body); font-size: 0.95rem;
+  line-height: 1.6; color: var(--text);
+  position: relative; margin-bottom: 8px;
+}
+.preview-bubble::before {
+  content: '🚨';
+  display: block; font-size: 1.2rem; margin-bottom: 6px;
+}
+#preview-name { color: var(--red); font-weight: 700; }
+.preview-time {
+  font-family: var(--mono); font-size: 0.6rem;
+  color: var(--muted); text-align: right; margin-top: 4px;
+}
+
+/* Message editor */
+.msg-editor {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px;
+  font-family: var(--mono); font-size: 0.82rem;
+  color: var(--text); width: 100%; resize: none;
+  outline: none; min-height: 80px; line-height: 1.6;
+  transition: border-color 0.2s;
+}
+.msg-editor:focus { border-color: var(--red); }
+
+/* Payment & trigger zone */
+.trigger-zone {
+  background: var(--panel);
+  border: 1px solid rgba(255,26,26,0.25);
+  border-radius: 12px;
+  padding: 24px; margin-bottom: 28px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(255,26,26,0.05);
+}
+.trigger-zone-title {
+  font-family: var(--head); font-size: 1.8rem;
+  color: var(--white); letter-spacing: 3px; margin-bottom: 6px;
+}
+.trigger-zone-sub {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 20px;
+}
+.payment-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px; margin-bottom: 20px;
+  max-width: 480px; margin-left: auto; margin-right: auto;
+}
+.payment-card {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 12px;
+  text-align: center; cursor: pointer;
+  transition: all 0.2s;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+}
+.payment-card:hover { border-color: #444; transform: translateY(-1px); }
+.payment-card.selected {
+  border-color: var(--red);
+  background: var(--red-faint);
+  box-shadow: 0 0 14px rgba(255,26,26,0.15);
+}
+.pay-icon { font-size: 1.6rem; line-height: 1; }
+.pay-name {
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px; line-height: 1.3;
+}
+.pay-name.selected { color: var(--red); }
+.pay-badge {
+  font-family: var(--mono); font-size: 0.55rem;
+  color: var(--green); letter-spacing: 1px;
+  background: rgba(57,255,20,0.08);
+  border: 1px solid rgba(57,255,20,0.2);
+  padding: 2px 6px; border-radius: 3px;
+}
+.pay-note {
+  font-family: var(--mono); font-size: 0.58rem;
+  color: var(--muted); letter-spacing: 0.5px;
+  margin-top: 4px; line-height: 1.4;
+}
+.flw-powered {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-bottom: 16px;
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+}
+.flw-logo {
+  background: #f5a623; color: #000;
+  font-family: var(--body); font-weight: 700;
+  font-size: 0.6rem; padding: 2px 6px;
+  border-radius: 3px; letter-spacing: 0;
+}
+
+.fee-display {
+  font-family: var(--head); font-size: 2.4rem;
+  color: var(--amber); letter-spacing: 2px; margin-bottom: 4px;
+}
+.fee-sub {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 20px;
+}
+
+/* THE TRIGGER BUTTON */
+.trigger-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 12px;
+  padding: 18px 48px;
+  background: linear-gradient(135deg, #8b0000, #cc0000, #ff1a1a);
+  border: 2px solid var(--red);
+  border-radius: 8px;
+  color: var(--white); font-family: var(--head);
+  font-size: 1.5rem; letter-spacing: 5px;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 0 30px rgba(255,26,26,0.4), inset 0 0 20px rgba(255,255,255,0.05);
+  position: relative; overflow: hidden;
+  width: 100%; max-width: 420px;
+}
+.trigger-btn::before {
+  content: '';
+  position: absolute; top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transition: left 0.5s;
+}
+.trigger-btn:hover::before { left: 100%; }
+.trigger-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 50px rgba(255,26,26,0.6), inset 0 0 30px rgba(255,255,255,0.08);
+}
+.trigger-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.trigger-btn:not(:disabled):active { transform: scale(0.98); }
+
+.trigger-warning {
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+  margin-top: 14px; line-height: 1.6;
+}
+.trigger-warning .hl { color: var(--amber); }
+
+/* Alert history */
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 16px;
+}
+.hist-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.hist-dot.sent { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.hist-dot.pending { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.hist-info { flex: 1; }
+.hist-title {
+  font-family: var(--body); font-size: 0.9rem;
+  font-weight: 600; color: var(--white);
+}
+.hist-meta {
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+}
+.hist-count {
+  font-family: var(--mono); font-size: 0.7rem;
+  color: var(--cyan); letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 4 — PAYMENT
+═══════════════════════════════════════════════════════════ */
+#screen-payment {
+  background: radial-gradient(ellipse at 50% 0%, #180000, #050505 60%);
+  align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+.payment-box {
+  background: var(--panel); border: 1px solid #2a0000;
+  border-radius: 12px; padding: 36px;
+  width: 100%; max-width: 460px;
+  box-shadow: 0 0 60px rgba(255,26,26,0.1);
+}
+.pay-header {
+  text-align: center; margin-bottom: 28px;
+}
+.pay-header-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.pay-header-title {
+  font-family: var(--head); font-size: 2rem;
+  color: var(--white); letter-spacing: 3px; margin-bottom: 4px;
+}
+.pay-header-sub {
+  font-family: var(--mono); font-size: 0.68rem;
+  color: var(--muted); letter-spacing: 2px;
+}
+.pay-amount-display {
+  background: var(--red-faint); border: 1px solid rgba(255,26,26,0.25);
+  border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 22px;
+}
+.pay-amount {
+  font-family: var(--head); font-size: 3rem;
+  color: var(--amber); letter-spacing: 2px;
+}
+.pay-amount-note {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 2px; margin-top: 4px;
+}
+.pay-methods { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+.pay-method {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 16px;
+  cursor: pointer; transition: all 0.2s;
+}
+.pay-method:hover, .pay-method.selected {
+  border-color: var(--red); background: var(--red-faint);
+}
+.pm-icon { font-size: 1.5rem; }
+.pm-info { flex: 1; }
+.pm-name {
+  font-family: var(--body); font-size: 0.95rem; font-weight: 700;
+  color: var(--white);
+}
+.pm-desc {
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+}
+.pm-radio {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid #444; transition: all 0.2s;
+}
+.pay-method.selected .pm-radio {
+  border-color: var(--red); background: var(--red);
+  box-shadow: 0 0 8px var(--red-glow);
+}
+
+.pay-confirm-btn {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, #8b0000, #ff1a1a);
+  border: none; border-radius: 8px;
+  color: var(--white); font-family: var(--head);
+  font-size: 1.3rem; letter-spacing: 4px;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 24px rgba(255,26,26,0.35);
+  margin-bottom: 12px;
+}
+.pay-confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 36px rgba(255,26,26,0.5); }
+
+.pay-cancel-btn {
+  width: 100%; padding: 10px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); font-family: var(--mono);
+  font-size: 0.7rem; letter-spacing: 2px;
+  cursor: pointer; border-radius: 8px; transition: all 0.2s;
+}
+.pay-cancel-btn:hover { border-color: var(--muted); color: var(--text); }
+
+.pay-security-note {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 0.62rem;
+  color: var(--muted); letter-spacing: 1px;
+  margin-top: 14px; justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 5 — SENDING / CONFIRMATION
+═══════════════════════════════════════════════════════════ */
+#screen-sending {
+  background: radial-gradient(ellipse at center, #130000, #050505 65%);
+  align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center;
+}
+.sending-content { max-width: 500px; }
+
+/* Animated radar */
+.radar-wrap {
+  position: relative; width: 180px; height: 180px;
+  margin: 0 auto 28px;
+}
+.radar-circle {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(255,26,26,0.3);
+}
+.radar-circle:nth-child(2) { inset: 20px; }
+.radar-circle:nth-child(3) { inset: 40px; }
+.radar-circle:nth-child(4) { inset: 60px; }
+.radar-sweep {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255,26,26,0.4) 30deg,
+    transparent 60deg
+  );
+  animation: sweep 1.8s linear infinite;
+}
+@keyframes sweep { to { transform: rotate(360deg); } }
+.radar-center {
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 20px var(--red);
+  animation: badge-pulse 0.8s infinite;
+}
+.radar-blip {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red); box-shadow: 0 0 8px var(--red);
+  animation: blip-fade 1.8s ease-out infinite;
+}
+@keyframes blip-fade { 0%{opacity:1} 100%{opacity:0} }
+
+.sending-title {
+  font-family: var(--head); font-size: 2.8rem;
+  color: var(--white); letter-spacing: 4px; margin-bottom: 8px;
+}
+.sending-sub {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 28px;
+}
+.sending-log {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px; text-align: left;
+  margin-bottom: 20px; min-height: 140px;
+  font-family: var(--mono); font-size: 0.72rem;
+  line-height: 1.8; color: var(--muted);
+}
+.log-line { opacity: 0; animation: log-appear 0.3s ease forwards; }
+.log-line.ok::before { content: '✓ '; color: var(--green); }
+.log-line.send::before { content: '→ '; color: var(--cyan); }
+.log-line.warn::before { content: '⚡ '; color: var(--amber); }
+@keyframes log-appear { to { opacity:1; } }
+
+.sending-progress-wrap {
+  height: 4px; background: var(--border);
+  border-radius: 2px; overflow: hidden; margin-bottom: 10px;
+}
+.sending-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red-dim), var(--red), #ff6666);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.sending-progress-text {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 2px; text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN 6 — SUCCESS
+═══════════════════════════════════════════════════════════ */
+#screen-success {
+  background: radial-gradient(ellipse at center, #001a00, #050505 65%);
+  align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center;
+}
+.success-content { max-width: 500px; }
+.success-icon {
+  font-size: 5rem; margin-bottom: 16px;
+  animation: pop-in 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes pop-in {
+  0% { transform: scale(0); opacity:0; }
+  100% { transform: scale(1); opacity:1; }
+}
+.success-title {
+  font-family: var(--head); font-size: 3rem;
+  color: var(--green); letter-spacing: 4px;
+  text-shadow: 0 0 30px rgba(57,255,20,0.4);
+  margin-bottom: 8px;
+}
+.success-sub {
+  font-family: var(--mono); font-size: 0.75rem;
+  color: var(--muted); letter-spacing: 2px; margin-bottom: 24px;
+}
+.success-stats {
+  display: flex; gap: 12px; justify-content: center;
+  margin-bottom: 28px; flex-wrap: wrap;
+}
+.sstat {
+  background: var(--panel); border: 1px solid rgba(57,255,20,0.2);
+  border-radius: 8px; padding: 16px 22px; text-align: center;
+}
+.sstat-num {
+  font-family: var(--head); font-size: 2rem;
+  color: var(--green); letter-spacing: 2px;
+}
+.sstat-lbl {
+  font-family: var(--mono); font-size: 0.6rem;
+  color: var(--muted); letter-spacing: 2px;
+}
+.success-back-btn {
+  padding: 14px 36px;
+  background: rgba(57,255,20,0.1);
+  border: 1px solid rgba(57,255,20,0.4);
+  border-radius: 8px; color: var(--green);
+  font-family: var(--head); font-size: 1.1rem;
+  letter-spacing: 3px; cursor: pointer;
+  transition: all 0.2s;
+}
+.success-back-btn:hover { background: rgba(57,255,20,0.2); transform: translateY(-2px); }
+
+
+  /* ── CONTACT MANAGER ─────────────────────────────────── */
+  .contact-manager { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 28px; overflow: hidden; }
+  .cm-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: rgba(0,229,255,0.04); border-bottom: 1px solid var(--border); cursor: pointer; }
+  .cm-header-left { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 0.72rem; color: var(--cyan); letter-spacing: 2px; }
+  .cm-count-badge { background: rgba(0,229,255,0.12); border: 1px solid rgba(0,229,255,0.3); color: var(--cyan); font-family: var(--mono); font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; letter-spacing: 1px; }
+  .cm-toggle { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; }
+  .cm-toggle.open { transform: rotate(180deg); }
+  .cm-body { padding: 18px; display: none; }
+  .cm-body.open { display: block; }
+  .cm-input-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cm-phone-input { flex: 1; min-width: 140px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; color: var(--white); font-family: var(--mono); font-size: 0.82rem; outline: none; transition: border-color 0.2s; }
+  .cm-phone-input:focus { border-color: var(--cyan); }
+  .cm-phone-input::placeholder { color: var(--muted); }
+  .cm-add-btn { padding: 10px 16px; background: rgba(0,229,255,0.1); border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); font-family: var(--mono); font-size: 0.72rem; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .cm-add-btn:hover { background: rgba(0,229,255,0.2); }
+  .cm-bulk-area { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; color: var(--text); font-family: var(--mono); font-size: 0.78rem; width: 100%; resize: vertical; outline: none; min-height: 80px; line-height: 1.7; transition: border-color 0.2s; margin-bottom: 8px; }
+  .cm-bulk-area:focus { border-color: var(--cyan); }
+  .cm-bulk-area::placeholder { color: var(--muted); }
+  .cm-bulk-hint { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 10px; line-height: 1.6; }
+  .cm-bulk-btn { padding: 9px 16px; background: rgba(57,255,20,0.08); border: 1px solid rgba(57,255,20,0.3); border-radius: 6px; color: var(--green); font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+  .cm-bulk-btn:hover { background: rgba(57,255,20,0.15); }
+  .cm-list { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+  .cm-contact-item { display: flex; align-items: center; gap: 10px; background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }
+  .cm-contact-num { flex: 1; font-family: var(--mono); font-size: 0.78rem; color: var(--text); }
+  .cm-contact-name { font-family: var(--body); font-size: 0.78rem; color: var(--muted); }
+  .cm-remove-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 2px 6px; border-radius: 4px; transition: all 0.15s; }
+  .cm-remove-btn:hover { color: var(--red); background: rgba(255,26,26,0.1); }
+  .cm-empty { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); text-align: center; padding: 20px; letter-spacing: 1px; }
+  .cm-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .cm-tab { padding: 8px 16px; font-family: var(--mono); font-size: 0.65rem; letter-spacing: 2px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+  .cm-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+  .cm-save-bar { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--border); margin-top: 14px; flex-wrap: wrap; gap: 10px; }
+  .cm-total-lbl { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; }
+  .cm-total-lbl span { color: var(--cyan); font-size: 0.85rem; }
+  .cm-save-btn { padding: 9px 20px; background: linear-gradient(135deg, rgba(255,26,26,0.2), rgba(255,26,26,0.1)); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-family: var(--mono); font-size: 0.7rem; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
+  .cm-save-btn:hover { background: rgba(255,26,26,0.25); }
+
+/* ── UTILITY ─────────────────────────────────────────────── */
+.hidden { display: none !important; }
+input[type=text],input[type=email] {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 14px;
+  color: var(--white); font-family: var(--mono);
+  font-size: 0.85rem; width: 100%; outline: none;
+  transition: border-color 0.2s; margin-bottom: 12px;
+}
+input:focus { border-color: var(--red); }
+input::placeholder { color: var(--muted); }
+label {
+  display: block; font-family: var(--mono);
+  font-size: 0.65rem; color: var(--muted);
+  letter-spacing: 2px; margin-bottom: 6px;
+}
+
+/* Connect modal overlay */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+  z-index: 200; display: none;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 32px;
+  width: 100%; max-width: 400px;
+  animation: modal-in 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes modal-in {
+  from { transform: scale(0.92); opacity:0; }
+  to { transform: scale(1); opacity:1; }
+}
+.modal-title {
+  font-family: var(--head); font-size: 1.6rem;
+  color: var(--white); letter-spacing: 2px; margin-bottom: 4px;
+}
+.modal-sub {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--muted); letter-spacing: 1px; margin-bottom: 20px;
+}
+.modal-btn {
+  width: 100%; padding: 12px;
+  border: none; border-radius: 8px;
+  font-family: var(--body); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+.modal-btn.primary {
+  background: linear-gradient(135deg, #8b0000, #cc0000);
+  color: var(--white);
+}
+.modal-btn.primary:hover { background: linear-gradient(135deg, #aa0000, #ff1a1a); }
+.modal-btn.secondary {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted);
+}
+.modal-btn.secondary:hover { color: var(--text); border-color: #444; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:600px){
+  .dashboard-body{padding:16px;}
+  .social-grid{grid-template-columns:1fr;}
+  .payment-row{flex-direction:column;align-items:center;}
+  .trigger-btn{padding:16px 28px;font-size:1.2rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SCREEN 1: ENTRY ═══════════ -->
+<div class="screen active" id="screen-entry">
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <span class="pg">PHISH</span><span class="plus">GUARD+</span>
+    </div>
+    <div class="topbar-badge">
+      <div class="dot-live"></div> RED ALERT SYSTEM
+    </div>
+    <button class="back-btn" onclick="goToMainApp()">← MAIN APP</button>
+  </nav>
+
+  <div class="entry-rings">
+    <div class="ring"></div><div class="ring"></div>
+    <div class="ring"></div><div class="ring"></div>
+  </div>
+
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div class="entry-content">
+      <p class="entry-eyebrow">// EMERGENCY BROADCAST SYSTEM</p>
+      <h1 class="entry-title"><span class="red">RED</span><br>ALERT</h1>
+      <p class="entry-subtitle">
+        Account compromised? <strong>Instantly notify all your contacts</strong> across
+        WhatsApp, Facebook Messenger & Instagram — before the scammer does.
+      </p>
+
+      <button class="red-alert-trigger" onclick="goToPin()">
+        <span class="rat-icon">🚨</span>
+        <span class="rat-label">RED ALERT</span>
+        <span class="rat-sub">TAP TO ACTIVATE</span>
+      </button>
+
+      <p class="entry-disclaimer">
+        A <span>$1 broadcast fee</span> applies per alert.<br>
+        Accepted worldwide · All major payment methods.<br>
+        Your contacts will be notified <span>instantly</span>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 2: PIN ═══════════ -->
+<div class="screen" id="screen-pin">
+  <nav class="topbar">
+    <div class="topbar-logo"><span class="pg">PHISH</span><span class="plus">GUARD+</span></div>
+    <div class="topbar-badge"><div class="dot-live"></div> RED ALERT</div>
+    <button class="back-btn" onclick="showScreen('screen-entry')">← BACK</button>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div class="pin-box">
+      <div class="pin-icon">🔒</div>
+      <h2 class="pin-title">SECURE ACCESS</h2>
+      <p class="pin-subtitle">// ENTER YOUR 4-DIGIT RED ALERT PIN</p>
+
+      <div class="pin-tabs">
+        <button class="pin-tab active" id="tab-login" onclick="switchPinTab('login')">RETURNING USER</button>
+        <button class="pin-tab" id="tab-register" onclick="switchPinTab('register')">NEW USER</button>
+      </div>
+
+      <!-- Register extra fields -->
+      <div id="register-fields" class="hidden">
+        <label>// YOUR NAME</label>
+        <input type="text" id="reg-name" placeholder="e.g. Abdullahi Musa"/>
+        <label>// EMAIL (OPTIONAL)</label>
+        <input type="email" id="reg-email" placeholder="your@email.com"/>
+        <p style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:16px;letter-spacing:1px;">
+          // SET YOUR 4-DIGIT PIN BELOW
+        </p>
+      </div>
+
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+
+      <div class="numpad">
+        <button class="num-btn" onclick="pinInput('1')">1</button>
+        <button class="num-btn" onclick="pinInput('2')">2</button>
+        <button class="num-btn" onclick="pinInput('3')">3</button>
+        <button class="num-btn" onclick="pinInput('4')">4</button>
+        <button class="num-btn" onclick="pinInput('5')">5</button>
+        <button class="num-btn" onclick="pinInput('6')">6</button>
+        <button class="num-btn" onclick="pinInput('7')">7</button>
+        <button class="num-btn" onclick="pinInput('8')">8</button>
+        <button class="num-btn" onclick="pinInput('9')">9</button>
+        <button class="num-btn" onclick="pinInput('0')" style="grid-column:2">0</button>
+        <button class="num-btn del" onclick="pinDelete()">⌫</button>
+      </div>
+
+      <button class="pin-enter-btn" id="pin-enter-btn" onclick="submitPin()" disabled>
+        ENTER
+      </button>
+      <p class="pin-error" id="pin-error"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 3: DASHBOARD ═══════════ -->
+<div class="screen" id="screen-dashboard">
+  <nav class="topbar">
+    <div class="topbar-logo"><span class="pg">PHISH</span><span class="plus">GUARD+</span></div>
+    <div class="topbar-badge"><div class="dot-live"></div> RED ALERT ACTIVE</div>
+    <button class="back-btn" onclick="showScreen('screen-entry')">← EXIT</button>
+  </nav>
+
+  <div class="dashboard-body">
+
+    <!-- Status bar -->
+    <div class="alert-status-bar">
+      <div class="status-indicator">
+        <div class="status-dot" id="system-dot"></div>
+        <span id="system-status-text">SYSTEM READY</span>
+      </div>
+      <div class="contact-count">
+        TOTAL CONTACTS: <span id="total-contacts">0</span>
+      </div>
+    </div>
+
+    <!-- Social connects -->
+    <p class="section-label">// CONNECT SOCIAL ACCOUNTS</p>
+    <div class="social-grid">
+
+      <!-- WhatsApp -->
+      <div class="social-card whatsapp" id="card-whatsapp">
+        <div class="sc-top">
+          <span class="sc-logo">💬</span>
+          <div>
+            <div class="sc-name">WhatsApp</div>
+            <div class="sc-handle" id="wa-handle">Not connected</div>
+          </div>
+        </div>
+        <div class="sc-status disconnected" id="wa-status">● DISCONNECTED</div>
+        <div class="sc-contacts">Contacts ready: <span id="wa-count">0</span></div>
+        <button class="sc-btn connect" id="wa-btn" onclick="connectSocial('whatsapp')">
+          + CONNECT WHATSAPP
+        </button>
+      </div>
+
+      <!-- Facebook -->
+      <div class="social-card facebook" id="card-facebook">
+        <div class="sc-top">
+          <span class="sc-logo">📘</span>
+          <div>
+            <div class="sc-name">Facebook Messenger</div>
+            <div class="sc-handle" id="fb-handle">Not connected</div>
+          </div>
+        </div>
+        <div class="sc-status disconnected" id="fb-status">● DISCONNECTED</div>
+        <div class="sc-contacts">Friends ready: <span id="fb-count">0</span></div>
+        <button class="sc-btn connect" id="fb-btn" onclick="connectSocial('facebook')">
+          + CONNECT FACEBOOK
+        </button>
+      </div>
+
+      <!-- Instagram -->
+      <div class="social-card instagram" id="card-instagram">
+        <div class="sc-top">
+          <span class="sc-logo">📸</span>
+          <div>
+            <div class="sc-name">Instagram DM</div>
+            <div class="sc-handle" id="ig-handle">Not connected</div>
+          </div>
+        </div>
+        <div class="sc-status disconnected" id="ig-status">● DISCONNECTED</div>
+        <div class="sc-contacts">Followers ready: <span id="ig-count">0</span></div>
+        <button class="sc-btn connect" id="ig-btn" onclick="connectSocial('instagram')">
+          + CONNECT INSTAGRAM
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Contact Manager -->
+    <p class="section-label">// BROADCAST CONTACTS</p>
+    <div class="contact-manager">
+      <div class="cm-header" onclick="toggleContactManager()">
+        <div class="cm-header-left">
+          📋 &nbsp; MANAGE ALERT CONTACTS
+          <span class="cm-count-badge" id="cm-badge">0 CONTACTS</span>
+        </div>
+        <span class="cm-toggle" id="cm-toggle">▼</span>
+      </div>
+      <div class="cm-body" id="cm-body">
+
+        <div class="cm-tabs">
+          <button class="cm-tab active" id="cmtab-single" onclick="switchCMTab('single')">+ ADD ONE</button>
+          <button class="cm-tab" id="cmtab-bulk" onclick="switchCMTab('bulk')">📋 BULK PASTE</button>
+        </div>
+
+        <!-- Single add tab -->
+        <div id="cm-panel-single">
+          <div class="cm-input-row">
+            <input class="cm-phone-input" id="cm-phone" type="tel"
+              placeholder="+2348012345678  (include country code)" />
+            <input class="cm-phone-input" id="cm-name" type="text"
+              placeholder="Name (optional)" style="max-width:160px"/>
+            <button class="cm-add-btn" onclick="addContact()">+ ADD</button>
+          </div>
+        </div>
+
+        <!-- Bulk paste tab -->
+        <div id="cm-panel-bulk" style="display:none">
+          <textarea class="cm-bulk-area" id="cm-bulk-input"
+            placeholder="+2348012345678&#10;+2348098765432&#10;+2347011223344&#10;&#10;Paste one number per line. Country code required (+234 for Nigeria)."></textarea>
+          <p class="cm-bulk-hint">
+            // ONE NUMBER PER LINE · INCLUDE COUNTRY CODE · e.g. +2348012345678<br>
+            // YOU CAN COPY FROM YOUR PHONE CONTACTS AND PASTE HERE
+          </p>
+          <button class="cm-bulk-btn" onclick="addBulkContacts()">✓ IMPORT ALL NUMBERS</button>
+        </div>
+
+        <!-- Contact list -->
+        <div class="cm-list" id="cm-list">
+          <div class="cm-empty" id="cm-empty">// NO CONTACTS ADDED YET — ADD NUMBERS ABOVE</div>
+        </div>
+
+        <div class="cm-save-bar">
+          <div class="cm-total-lbl">READY TO ALERT: <span id="cm-total">0</span> CONTACTS</div>
+          <button class="cm-save-btn" onclick="saveContacts()">💾 SAVE CONTACTS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message preview -->
+    <p class="section-label">// ALERT MESSAGE PREVIEW</p>
+    <div class="message-preview-box">
+      <p class="preview-label">// THIS IS WHAT YOUR CONTACTS WILL RECEIVE</p>
+      <div class="preview-bubble">
+        ⚠️ URGENT SECURITY ALERT from <span id="preview-name">Your Name</span>:<br><br>
+        My account has been <strong>compromised/hacked</strong>. Any message you receive from me asking for <strong>money, OTP codes, or personal information</strong> is NOT from me — it is a scammer.<br><br>
+        Please <strong>DO NOT respond</strong> to any such requests. Stay safe and share this warning with others who know me.<br><br>
+        — Sent via <em>PhishGuard+ Red Alert</em> 🛡️
+      </div>
+      <p class="preview-time" id="preview-time">Delivered instantly upon payment confirmation</p>
+    </div>
+
+    <!-- Custom message -->
+    <p class="section-label" style="margin-top:20px;">// CUSTOMIZE YOUR ALERT (OPTIONAL)</p>
+    <textarea class="msg-editor" id="custom-msg" rows="3"
+      placeholder="Add a personal note to your alert message... (optional)"></textarea>
+
+    <!-- Trigger zone -->
+    <div class="trigger-zone">
+      <div class="trigger-zone-title">🚨 TRIGGER RED ALERT</div>
+      <div class="trigger-zone-sub">// SELECT PAYMENT METHOD · $1.00 ONE-TIME FEE</div>
+
+      <div class="payment-row">
+        <div class="payment-card selected" data-flw="card" onclick="selectPayCard(this)">
+          <div class="pay-icon">💳</div>
+          <div class="pay-name selected">DEBIT / CREDIT CARD</div>
+          <span class="pay-badge">INSTANT</span>
+          <div class="pay-note">Visa · Mastercard · Verve</div>
+        </div>
+        <div class="payment-card" data-flw="ussd" onclick="selectPayCard(this)">
+          <div class="pay-icon">📲</div>
+          <div class="pay-name">USSD / MOBILE MONEY</div>
+          <span class="pay-badge">INSTANT</span>
+          <div class="pay-note">GTBank · Access · MTN MoMo</div>
+        </div>
+        <div class="payment-card" data-flw="banktransfer" onclick="selectPayCard(this)">
+          <div class="pay-icon">🏦</div>
+          <div class="pay-name">BANK TRANSFER</div>
+          <span class="pay-badge">FAST</span>
+          <div class="pay-note">Transfer to virtual account</div>
+        </div>
+        <div class="payment-card" data-flw="barter" onclick="selectPayCard(this)">
+          <div class="pay-icon">🌍</div>
+          <div class="pay-name">BARTER / PAYPAL</div>
+          <span class="pay-badge">GLOBAL</span>
+          <div class="pay-note">Works from anywhere worldwide</div>
+        </div>
+      </div>
+
+      <div class="flw-powered">
+        SECURED & PROCESSED BY <span class="flw-logo">Flutterwave</span>
+      </div>
+
+      <div class="fee-display">$1.00</div>
+      <div class="fee-sub">// ONE-TIME BROADCAST FEE · ACCEPTED WORLDWIDE</div>
+
+      <button class="trigger-btn" id="trigger-btn" onclick="confirmPayment()">
+        🚨 &nbsp; SEND RED ALERT
+      </button>
+      <p class="trigger-warning" id="trigger-warning-text">
+        ⚠ Connect at least one social account to activate.<br>
+        <span class="hl">Alert will be sent to <span id="trigger-count">0</span> contacts after payment confirmation.</span>
+      </p>
+    </div>
+
+    <!-- Alert history -->
+    <p class="section-label">// ALERT HISTORY</p>
+    <div class="history-list" id="history-list">
+      <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);padding:16px;text-align:center;letter-spacing:2px;">
+        // NO ALERTS SENT YET
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 4: PAYMENT ═══════════ -->
+<div class="screen" id="screen-payment">
+  <nav class="topbar">
+    <div class="topbar-logo"><span class="pg">PHISH</span><span class="plus">GUARD+</span></div>
+    <div class="topbar-badge"><div class="dot-live"></div> SECURE PAYMENT</div>
+    <button class="back-btn" onclick="showScreen('screen-dashboard')">← BACK</button>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div class="payment-box">
+      <div class="pay-header">
+        <div class="pay-header-icon">🔐</div>
+        <div class="pay-header-title">SECURE PAYMENT</div>
+        <div class="pay-header-sub">// AUTHORIZE YOUR RED ALERT BROADCAST</div>
+      </div>
+
+      <div class="pay-amount-display">
+        <div class="pay-amount">$1.00</div>
+        <div class="pay-amount-note">ONE-TIME BROADCAST FEE · <span id="pay-contact-count">0</span> CONTACTS</div>
+      </div>
+
+      <div class="pay-methods">
+        <div class="pay-method selected" onclick="selectPayMethod(this)">
+          <span class="pm-icon">💳</span>
+          <div class="pm-info">
+            <div class="pm-name">Debit / Credit Card</div>
+            <div class="pm-desc">Visa · Mastercard · Verve · All cards accepted</div>
+          </div>
+          <div class="pm-radio"></div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this)">
+          <span class="pm-icon">📲</span>
+          <div class="pm-info">
+            <div class="pm-name">Mobile Money / USSD</div>
+            <div class="pm-desc">MTN MoMo · Airtel Money · GTBank · Access</div>
+          </div>
+          <div class="pm-radio"></div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this)">
+          <span class="pm-icon">₿</span>
+          <div class="pm-info">
+            <div class="pm-name">Crypto</div>
+            <div class="pm-desc">BTC · ETH · USDT · Any major cryptocurrency</div>
+          </div>
+          <div class="pm-radio"></div>
+        </div>
+        <div class="pay-method" onclick="selectPayMethod(this)">
+          <span class="pm-icon">🌍</span>
+          <div class="pm-info">
+            <div class="pm-name">PayPal / International</div>
+            <div class="pm-desc">PayPal · Google Pay · Apple Pay · Flutterwave</div>
+          </div>
+          <div class="pm-radio"></div>
+        </div>
+      </div>
+
+      <button class="pay-confirm-btn" onclick="confirmPayment()">
+        CONFIRM & SEND ALERT
+      </button>
+      <button class="pay-cancel-btn" onclick="showScreen('screen-dashboard')">
+        CANCEL
+      </button>
+
+      <div class="pay-security-note">
+        🔒 &nbsp; SECURED BY 256-BIT ENCRYPTION &nbsp;·&nbsp; GLOBAL PAYMENTS SUPPORTED
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 5: SENDING ═══════════ -->
+<div class="screen" id="screen-sending">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div class="sending-content">
+      <div class="radar-wrap">
+        <div class="radar-circle"></div>
+        <div class="radar-circle"></div>
+        <div class="radar-circle"></div>
+        <div class="radar-circle"></div>
+        <div class="radar-sweep"></div>
+        <div class="radar-center"></div>
+        <div class="radar-blip" id="blip1" style="top:30%;left:65%;animation-delay:0.3s"></div>
+        <div class="radar-blip" id="blip2" style="top:60%;left:28%;animation-delay:0.9s"></div>
+        <div class="radar-blip" id="blip3" style="top:22%;left:40%;animation-delay:1.5s"></div>
+      </div>
+      <h2 class="sending-title">BROADCASTING...</h2>
+      <p class="sending-sub" id="sending-sub">// PAYMENT CONFIRMED — SENDING ALERTS</p>
+      <div class="sending-log" id="sending-log"></div>
+      <div class="sending-progress-wrap">
+        <div class="sending-progress-bar" id="send-progress"></div>
+      </div>
+      <p class="sending-progress-text" id="send-progress-text">0% COMPLETE</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 6: SUCCESS ═══════════ -->
+<div class="screen" id="screen-success">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+    <div class="success-content">
+      <div class="success-icon">✅</div>
+      <h2 class="success-title">ALERT SENT!</h2>
+      <p class="success-sub">// ALL CONTACTS HAVE BEEN NOTIFIED</p>
+      <div class="success-stats">
+        <div class="sstat">
+          <div class="sstat-num" id="stat-delivered">0</div>
+          <div class="sstat-lbl">DELIVERED</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num" id="stat-platforms">0</div>
+          <div class="sstat-lbl">PLATFORMS</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num">$1</div>
+          <div class="sstat-lbl">PAID</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num" id="stat-time">0s</div>
+          <div class="sstat-lbl">DELIVERY TIME</div>
+        </div>
+      </div>
+      <p style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);margin-bottom:24px;letter-spacing:1px;line-height:1.7;">
+        Your contacts have been warned. They will not fall victim<br>
+        to any scam message sent from your compromised account.
+      </p>
+      <button class="success-back-btn" onclick="showScreen('screen-dashboard')">
+        BACK TO DASHBOARD
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CONNECT MODAL ═══════════ -->
+<div class="modal-overlay" id="connect-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">CONNECT ACCOUNT</div>
+    <div class="modal-sub" id="modal-sub">// ENTER YOUR ACCOUNT DETAILS</div>
+    <label id="modal-field-label">// USERNAME / PHONE NUMBER</label>
+    <input type="text" id="modal-input" placeholder="+234 800 000 0000"/>
+    <label>// IMPORT CONTACTS FROM</label>
+    <select id="modal-import-type" style="background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--white);font-family:var(--mono);font-size:0.8rem;width:100%;outline:none;margin-bottom:16px;cursor:pointer;">
+      <option>All contacts</option>
+      <option>Saved contacts only</option>
+      <option>Frequent contacts</option>
+    </select>
+    <button class="modal-btn primary" onclick="confirmConnect()">CONNECT & IMPORT</button>
+    <button class="modal-btn secondary" onclick="closeModal()">CANCEL</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+const state = {
+  currentTab: 'login',
+  pin: '',
+  userName: 'User',
+  token: localStorage.getItem('ra_token') || null,
+  userId: localStorage.getItem('ra_user_id') || null,
+  socials: { whatsapp: null, facebook: null, instagram: null },
+  contactCounts: { whatsapp: 0, facebook: 0, instagram: 0 },
+  connectingPlatform: null,
+  alertHistory: [],
+  currentAlertId: null,
+};
+
+const platformLabels = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
+
+// ── API HELPER ─────────────────────────────────────────────
+async function api(endpoint, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+  const res = await fetch(`/api/${endpoint}`, {
+    method: 'POST', headers,
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ── SCREEN NAV ─────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goToMainApp() {
+  window.location.href = 'index.html';
+
+}
+
+function goToPin() { showScreen('screen-pin'); resetPin(); }
+
+// ── PIN LOGIC ──────────────────────────────────────────────
+function switchPinTab(tab) {
+  state.currentTab = tab;
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('register-fields').classList.toggle('hidden', tab !== 'register');
+  resetPin();
+}
+
+function pinInput(digit) {
+  if (state.pin.length >= 4) return;
+  state.pin += digit;
+  updatePinDots();
+  if (state.pin.length === 4) {
+    document.getElementById('pin-enter-btn').disabled = false;
+  }
+}
+
+function pinDelete() {
+  state.pin = state.pin.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pin-enter-btn').disabled = state.pin.length < 4;
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`dot-${i}`).classList.toggle('filled', i < state.pin.length);
+  }
+}
+
+function resetPin() {
+  state.pin = '';
+  updatePinDots();
+  document.getElementById('pin-enter-btn').disabled = true;
+  document.getElementById('pin-error').textContent = '';
+}
+
+async function submitPin() {
+  const btn = document.getElementById('pin-enter-btn');
+  btn.disabled = true;
+  btn.textContent = 'CHECKING...';
+
+  try {
+    if (state.currentTab === 'register') {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      if (!name) { showPinError('Please enter your name'); btn.disabled = false; btn.textContent = 'ENTER'; return; }
+
+      const data = await api('auth', { action: 'register', pin: state.pin, name, email });
+      if (!data.success) { showPinError(data.error || 'Registration failed'); btn.disabled = false; btn.textContent = 'ENTER'; return; }
+
+      state.token = data.token;
+      state.userId = data.user.id;
+      state.userName = data.user.name;
+      localStorage.setItem('ra_token', data.token);
+      localStorage.setItem('ra_user_id', data.user.id);
+      localStorage.setItem('ra_name', data.user.name);
+      enterDashboard();
+
+    } else {
+      const email = document.getElementById('reg-email')?.value?.trim() || localStorage.getItem('ra_email') || '';
+      const userId = state.userId;
+
+      const body = { action: 'login', pin: state.pin };
+      if (userId) body.userId = userId;
+      else if (email) body.email = email;
+      else { showPinError('Please switch to New User to register first.'); btn.disabled = false; btn.textContent = 'ENTER'; return; }
+
+      const data = await api('auth', body);
+      if (!data.success) { showPinError(data.error || 'Incorrect PIN'); btn.disabled = false; btn.textContent = 'ENTER'; resetPin(); return; }
+
+      state.token = data.token;
+      state.userId = data.user.id;
+      state.userName = data.user.name;
+      localStorage.setItem('ra_token', data.token);
+      localStorage.setItem('ra_user_id', data.user.id);
+      localStorage.setItem('ra_name', data.user.name);
+      enterDashboard();
+    }
+  } catch (err) {
+    console.error(err);
+    showPinError('Connection error. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'ENTER';
+  }
+}
+
+function showPinError(msg) {
+  const el = document.getElementById('pin-error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.remove('visible');
+  void el.offsetHeight; // reflow to restart animation
+  el.classList.add('visible');
+
+  // Flash all dots red
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    dot.classList.add('error');
+    setTimeout(() => dot.classList.remove('error'), 600);
+  }
+
+  // Auto-clear after 4 seconds
+  clearTimeout(window._pinErrTimer);
+  window._pinErrTimer = setTimeout(() => {
+    el.classList.remove('visible');
+  }, 4000);
+}
+
+async function enterDashboard() {
+  const savedName = localStorage.getItem('ra_name') || state.userName;
+  state.userName = savedName;
+  document.getElementById('preview-name').textContent = savedName;
+
+  // Load existing connections from backend
+  try {
+    const data = await api('connect', { action: 'list' });
+    if (data.success && data.connections) {
+      for (const conn of data.connections) {
+        const p = conn.platform;
+        state.socials[p] = conn.handle;
+        // Use stored count, or default to 1 so button activates
+        state.contactCounts[p] = conn.contact_count || 1;
+        updateSocialCardUI(p, conn.handle, conn.contact_count || 0);
+      }
+    }
+  } catch (e) { console.warn('Could not load connections:', e); }
+
+  // Load alert history
+  try {
+    const hist = await api('alert', { action: 'history' });
+    if (hist.success && hist.alerts) {
+      state.alertHistory = hist.alerts;
+      renderHistory();
+    }
+  } catch (e) { console.warn('Could not load history:', e); }
+
+  updateDashboardCounts();
+  updateTriggerButton();
+  showScreen('screen-dashboard');
+  // Load saved contacts in background
+  loadSavedContacts();
+}
+
+// ── SOCIAL CONNECT ─────────────────────────────────────────
+function connectSocial(platform) {
+  state.connectingPlatform = platform;
+  const modal = document.getElementById('connect-modal');
+  document.getElementById('modal-title').textContent = `CONNECT ${platform.toUpperCase()}`;
+  document.getElementById('modal-sub').textContent = `// LINK YOUR ${platformLabels[platform].toUpperCase()} ACCOUNT`;
+  const fieldLabel = platform === 'whatsapp' ? '// PHONE NUMBER' : '// USERNAME OR EMAIL';
+  document.getElementById('modal-field-label').textContent = fieldLabel;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-input').placeholder =
+    platform === 'whatsapp' ? '+234 800 000 0000' :
+    platform === 'facebook' ? 'your.name@email.com' : '@yourusername';
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('connect-modal').classList.remove('open');
+  state.connectingPlatform = null;
+}
+
+async function confirmConnect() {
+  const input = document.getElementById('modal-input').value.trim();
+  if (!input) { alert('Please enter your account details.'); return; }
+  const p = state.connectingPlatform;
+
+  const confirmBtn = document.querySelector('#connect-modal .modal-btn.primary');
+  confirmBtn.textContent = 'CONNECTING...';
+  confirmBtn.disabled = true;
+
+  try {
+    const data = await api('connect', { action: 'save', platform: p, handle: input });
+    if (!data.success) {
+      alert(data.error || 'Could not connect. Please try again.');
+      confirmBtn.textContent = 'CONNECT & IMPORT';
+      confirmBtn.disabled = false;
+      return;
+    }
+
+    const count = data.contactCount || 1;
+    state.socials[p] = input;
+    state.contactCounts[p] = count;
+    updateSocialCardUI(p, input, data.contactCount || 0);
+    updateDashboardCounts();
+    updateTriggerButton();
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    alert('Connection error. Please try again.');
+    confirmBtn.textContent = 'CONNECT & IMPORT';
+    confirmBtn.disabled = false;
+  }
+}
+
+async function disconnectSocial(p) {
+  try { await api('connect', { action: 'remove', platform: p }); } catch (e) { console.warn(e); }
+  state.socials[p] = null;
+  state.contactCounts[p] = 0;
+  const short = p === 'whatsapp' ? 'wa' : p === 'facebook' ? 'fb' : 'ig';
+  document.getElementById(`card-${p}`).classList.remove('connected');
+  document.getElementById(`${short}-handle`).textContent = 'Not connected';
+  document.getElementById(`${short}-status`).textContent = '● DISCONNECTED';
+  document.getElementById(`${short}-status`).className = 'sc-status disconnected';
+  document.getElementById(`${short}-count`).textContent = '0';
+  const btn = document.getElementById(`${short}-btn`);
+  btn.textContent = `+ CONNECT ${p.toUpperCase()}`;
+  btn.className = 'sc-btn connect';
+  btn.onclick = () => connectSocial(p);
+  updateDashboardCounts();
+  updateTriggerButton();
+}
+
+// ── Update card UI helper ──────────────────────────────────
+function updateSocialCardUI(p, handle, count) {
+  const short = p === 'whatsapp' ? 'wa' : p === 'facebook' ? 'fb' : 'ig';
+  document.getElementById(`card-${p}`).classList.add('connected');
+  document.getElementById(`${short}-handle`).textContent = handle;
+  document.getElementById(`${short}-status`).textContent = '● CONNECTED';
+  document.getElementById(`${short}-status`).className = 'sc-status connected';
+  document.getElementById(`${short}-count`).textContent = count.toLocaleString();
+  const btn = document.getElementById(`${short}-btn`);
+  btn.textContent = '✓ CONNECTED — DISCONNECT';
+  btn.className = 'sc-btn disconnect';
+  btn.onclick = () => disconnectSocial(p);
+}
+
+function updateDashboardCounts() {
+  const total = Object.values(state.contactCounts).reduce((a, b) => a + b, 0);
+  const hasConnection = Object.values(state.socials).some(v => v !== null);
+  const displayCount = total > 0 ? total.toLocaleString() : (hasConnection ? 'your' : '0');
+  document.getElementById('total-contacts').textContent = total > 0 ? total.toLocaleString() : (hasConnection ? '✓' : '0');
+  const triggerEl = document.getElementById('trigger-count');
+  if (triggerEl) triggerEl.textContent = displayCount;
+  const payEl = document.getElementById('pay-contact-count');
+  if (payEl) payEl.textContent = displayCount;
+  if (hasConnection) {
+    document.getElementById('system-dot').classList.add('red');
+    document.getElementById('system-status-text').textContent = 'READY TO BROADCAST';
+  } else {
+    document.getElementById('system-dot').classList.remove('red');
+    document.getElementById('system-status-text').textContent = 'SYSTEM READY';
+  }
+}
+
+function updateTriggerButton() {
+  // Enable if ANY social account is connected (even if contact count is 0)
+  const hasConnection = Object.values(state.socials).some(v => v !== null);
+  const total = Object.values(state.contactCounts).reduce((a, b) => a + b, 0);
+  const btn = document.getElementById('trigger-btn');
+  btn.disabled = !hasConnection;
+  // Update warning text
+  const warn = document.getElementById('trigger-warning-text');
+  if (warn) {
+    if (!hasConnection) {
+      warn.innerHTML = '⚠ Connect at least one social account to activate.<br><span class="hl">Alert will be sent to <span id="trigger-count">' + total + '</span> contacts after payment confirmation.</span>';
+    } else {
+      warn.innerHTML = '✅ Ready to broadcast.<br><span class="hl">Alert will be sent to <span id="trigger-count">' + (total || 'your') + '</span> contacts after payment confirmation.</span>';
+    }
+  }
+}
+
+function selectPayCard(el) {
+  document.querySelectorAll('.payment-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('.pay-name').classList.remove('selected');
+  });
+  el.classList.add('selected');
+  el.querySelector('.pay-name').classList.add('selected');
+  // Store selected Flutterwave payment option
+  state.selectedPaymentOption = el.dataset.flw || 'card';
+}
+
+// ── PAYMENT ───────────────────────────────────────────────
+function goToPayment() {
+  const total = Object.values(state.contactCounts).reduce((a, b) => a + b, 0);
+  if (total === 0) return;
+  document.getElementById('pay-contact-count').textContent = total.toLocaleString();
+  showScreen('screen-payment');
+}
+
+function selectPayMethod(el) {
+  document.querySelectorAll('.pay-method').forEach(m => m.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function confirmPayment() {
+  const total = Object.values(state.contactCounts).reduce((a, b) => a + b, 0);
+  const connectedPlatforms = Object.entries(state.socials).filter(([,v]) => v !== null).map(([k]) => k);
+  if (connectedPlatforms.length === 0) {
+    alert('Please connect at least one social account first.');
+    return;
+  }
+
+  // Initiate Flutterwave payment
+  const btn = document.getElementById('trigger-btn');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ &nbsp; INITIATING PAYMENT...';
+
+  try {
+    const data = await api('payment', {
+      action: 'initiate',
+      contactCount: total,
+      platforms: connectedPlatforms,
+      customerName: state.userName,
+      paymentOption: state.selectedPaymentOption || 'card',
+    });
+
+    if (!data.success) {
+      alert(data.error || 'Payment could not be initiated. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = origText;
+      return;
+    }
+
+    // Save alertId for after payment
+    state.currentAlertId = data.alertId;
+    localStorage.setItem('ra_alert_id', data.alertId);
+    localStorage.setItem('ra_tx_ref', data.txRef);
+
+    // Redirect to Flutterwave payment page
+    window.location.href = data.paymentLink;
+
+  } catch (err) {
+    console.error(err);
+    alert('Payment service error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
+}
+
+// ── Called on return from Flutterwave payment page ─────────
+async function handlePaymentReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const txRef = params.get('tx_ref') || localStorage.getItem('ra_tx_ref');
+  const transactionId = params.get('transaction_id');
+  const status = params.get('status');
+
+  if (!txRef || status !== 'successful') return;
+
+  // Clean URL
+  window.history.replaceState({}, '', '/red-alert.html');
+
+  // Restore state
+  state.token = localStorage.getItem('ra_token');
+  state.userId = localStorage.getItem('ra_user_id');
+  state.userName = localStorage.getItem('ra_name') || 'User';
+  state.currentAlertId = localStorage.getItem('ra_alert_id');
+
+  if (!state.token || !state.currentAlertId) return;
+
+  // Verify payment then broadcast
+  showScreen('screen-sending');
+  await runBroadcast(txRef, transactionId);
+}
+
+// ── SENDING ANIMATION + REAL BROADCAST ────────────────────
+async function runBroadcast(txRef, transactionId) {
+  const log = document.getElementById('sending-log');
+  const bar = document.getElementById('send-progress');
+  const barTxt = document.getElementById('send-progress-text');
+  log.innerHTML = '';
+
+  const addLog = async (type, text, delay = 500) => {
+    await sleep(delay + Math.random() * 200);
+    const line = document.createElement('div');
+    line.className = `log-line ${type}`;
+    line.style.animationDelay = '0s';
+    line.textContent = text;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  };
+
+  const setProgress = (pct) => {
+    bar.style.width = pct + '%';
+    barTxt.textContent = pct + '% COMPLETE';
+  };
+
+  await addLog('ok', 'Payment received — verifying with Flutterwave...');
+  setProgress(15);
+
+  // Step 1: Verify payment
+  const verifyData = await api('payment', { action: 'verify', txRef, transactionId });
+  if (!verifyData.success || !verifyData.verified) {
+    await addLog('warn', '⚠ Payment verification failed. Contact support.');
+    setProgress(100);
+    return;
+  }
+
+  await addLog('ok', 'Payment confirmed — $1.00 received ✓');
+  setProgress(30);
+
+  // Step 2: Trigger broadcast
+  await addLog('send', 'Initiating Red Alert broadcast...');
+  const customMsg = document.getElementById('custom-msg')?.value?.trim() || '';
+  const alertData = await api('alert', {
+    action: 'broadcast',
+    alertId: state.currentAlertId,
+    customMessage: customMsg,
+  });
+  setProgress(50);
+
+  if (!alertData.success) {
+    await addLog('warn', `Broadcast error: ${alertData.error}`);
+    return;
+  }
+
+  // Step 3: Show platform results
+  for (const platform of (alertData.platforms || [])) {
+    await addLog('send', `Sending to ${platformLabels[platform.platform] || platform.platform} contacts...`);
+    setProgress(60);
+    await addLog('ok', `${platformLabels[platform.platform] || platform.platform} — ${platform.sent} messages delivered ✓`);
+    setProgress(80);
+  }
+
+  await addLog('warn', '🚨 Broadcast complete — all contacts notified!');
+  setProgress(100);
+  await sleep(600);
+
+  // Update success screen stats
+  document.getElementById('stat-delivered').textContent = (alertData.delivered || 0).toLocaleString();
+  document.getElementById('stat-platforms').textContent = (alertData.platforms || []).length;
+  document.getElementById('stat-time').textContent = '3s';
+
+  // Clear localStorage
+  localStorage.removeItem('ra_alert_id');
+  localStorage.removeItem('ra_tx_ref');
+
+  await sleep(800);
+  showScreen('screen-success');
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!state.alertHistory || state.alertHistory.length === 0) return;
+  list.innerHTML = state.alertHistory.map(h => {
+    const date = h.created_at ? new Date(h.created_at).toLocaleString() : (h.time || '');
+    const platforms = Array.isArray(h.platforms) ? h.platforms.join(', ') : (h.platforms || '');
+    const count = h.delivered_count ?? h.contact_count ?? h.count ?? 0;
+    const statusDot = h.status === 'sent' ? 'sent' : 'pending';
+    return `
+      <div class="history-item">
+        <div class="hist-dot ${statusDot}"></div>
+        <div class="hist-info">
+          <div class="hist-title">Red Alert Broadcast</div>
+          <div class="hist-meta">${date} · ${platforms}</div>
+        </div>
+        <div class="hist-count">${count.toLocaleString()} SENT</div>
+      </div>`;
+  }).join('');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── CONTACT MANAGER ───────────────────────────────────────
+let cmContacts = []; // { phone, name }
+
+function toggleContactManager() {
+  const body = document.getElementById('cm-body');
+  const toggle = document.getElementById('cm-toggle');
+  body.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+function switchCMTab(tab) {
+  document.getElementById('cmtab-single').classList.toggle('active', tab === 'single');
+  document.getElementById('cmtab-bulk').classList.toggle('active', tab === 'bulk');
+  document.getElementById('cm-panel-single').style.display = tab === 'single' ? 'block' : 'none';
+  document.getElementById('cm-panel-bulk').style.display = tab === 'bulk' ? 'block' : 'none';
+}
+
+function normalizePhone(raw) {
+  let p = raw.toString().replace(/[\s\-\(\)]/g, '');
+  // Convert 0801... to +2348011...
+  if (p.startsWith('0') && p.length >= 10) p = '+234' + p.slice(1);
+  // Add + if missing
+  if (!p.startsWith('+')) p = '+' + p;
+  return p;
+}
+
+function addContact() {
+  const phoneRaw = document.getElementById('cm-phone').value.trim();
+  const name = document.getElementById('cm-name').value.trim();
+  if (!phoneRaw) { alert('Please enter a phone number'); return; }
+  const phone = normalizePhone(phoneRaw);
+  if (phone.length < 10) { alert('Invalid phone number. Include country code e.g. +2348012345678'); return; }
+  if (cmContacts.find(c => c.phone === phone)) { alert('This number is already in your list'); return; }
+  cmContacts.push({ phone, name: name || '' });
+  document.getElementById('cm-phone').value = '';
+  document.getElementById('cm-name').value = '';
+  renderContactList();
+}
+
+function addBulkContacts() {
+  const raw = document.getElementById('cm-bulk-input').value;
+  const lines = raw.split(/[
+,;]+/).map(l => l.trim()).filter(l => l.length > 5);
+  let added = 0, skipped = 0;
+  for (const line of lines) {
+    const phone = normalizePhone(line);
+    if (phone.length < 10) { skipped++; continue; }
+    if (cmContacts.find(c => c.phone === phone)) { skipped++; continue; }
+    cmContacts.push({ phone, name: '' });
+    added++;
+  }
+  document.getElementById('cm-bulk-input').value = '';
+  renderContactList();
+  alert(`✅ Added ${added} contacts${skipped > 0 ? ` (${skipped} skipped — duplicates or invalid)` : ''}`);
+}
+
+function removeContact(phone) {
+  cmContacts = cmContacts.filter(c => c.phone !== phone);
+  renderContactList();
+}
+
+function renderContactList() {
+  const list = document.getElementById('cm-list');
+  const empty = document.getElementById('cm-empty');
+  const total = document.getElementById('cm-total');
+  const badge = document.getElementById('cm-badge');
+  total.textContent = cmContacts.length;
+  badge.textContent = cmContacts.length + ' CONTACTS';
+
+  // Update contact count in state
+  if (state.socials.whatsapp) {
+    state.contactCounts.whatsapp = cmContacts.length || 1;
+    updateDashboardCounts();
+    updateTriggerButton();
+  }
+
+  if (cmContacts.length === 0) {
+    list.innerHTML = '<div class="cm-empty" id="cm-empty">// NO CONTACTS ADDED YET — ADD NUMBERS ABOVE</div>';
+    return;
+  }
+  list.innerHTML = cmContacts.map((c, i) => `
+    <div class="cm-contact-item">
+      <span class="cm-contact-num">${c.phone}</span>
+      <span class="cm-contact-name">${c.name || ''}</span>
+      <button class="cm-remove-btn" onclick="removeContact('${c.phone}')">✕</button>
+    </div>
+  `).join('');
+}
+
+async function saveContacts() {
+  if (cmContacts.length === 0) { alert('Add at least one contact number first'); return; }
+  if (!state.socials.whatsapp) { alert('Please connect your WhatsApp number first'); return; }
+
+  const btn = document.querySelector('.cm-save-btn');
+  btn.textContent = '⏳ SAVING...';
+  btn.disabled = true;
+
+  try {
+    const data = await api('connect', {
+      action: 'save',
+      platform: 'whatsapp',
+      handle: state.socials.whatsapp,
+      contacts: cmContacts.map(c => ({ phone: c.phone, name: c.name })),
+    });
+
+    if (!data.success) {
+      alert(data.error || 'Could not save contacts. Try again.');
+    } else {
+      state.contactCounts.whatsapp = cmContacts.length;
+      updateDashboardCounts();
+      updateTriggerButton();
+      // Update the WA count display
+      document.getElementById('wa-count').textContent = cmContacts.length;
+      btn.textContent = '✅ SAVED!';
+      setTimeout(() => { btn.textContent = '💾 SAVE CONTACTS'; btn.disabled = false; }, 2000);
+    }
+  } catch(e) {
+    alert('Connection error. Please try again.');
+    btn.textContent = '💾 SAVE CONTACTS';
+    btn.disabled = false;
+  }
+}
+
+// Load saved contacts on dashboard entry
+async function loadSavedContacts() {
+  if (!state.token) return;
+  try {
+    const data = await api('connect', { action: 'listcontacts' });
+    if (data.success && data.contacts && data.contacts.length > 0) {
+      cmContacts = data.contacts.map(c => ({ phone: c.phone_number, name: c.display_name || '' }));
+      renderContactList();
+    }
+  } catch(e) { console.warn('Could not load contacts:', e); }
+}
+
+
+// ── PREVIEW TIME ──────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('preview-time').textContent =
+    'Sent: ' + new Date().toLocaleTimeString();
+}, 1000);
+
+// ── ON PAGE LOAD ───────────────────────────────────────────
+(async function init() {
+  // Check if returning from Flutterwave payment
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    await handlePaymentReturn();
+    return;
+  }
+
+  // Auto-login if token exists
+  if (state.token && state.userId) {
+    state.userName = localStorage.getItem('ra_name') || 'User';
+    await enterDashboard();
+  }
+})();
+</script>
+</body>
+</html>
